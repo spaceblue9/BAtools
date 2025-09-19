@@ -67,7 +67,7 @@
       gap: 15px;
       width: 100%;
       height: calc(100vh - 160px);
-      border: none; /* ปกติไม่โชว์ */
+      border: none;
     }
     #editor {
       width: 50%;
@@ -139,9 +139,7 @@
       cursor: pointer;
       font-size: 13px;
     }
-    .toolbar button:hover {
-      background: #ddd;
-    }
+    .toolbar button:hover { background: #ddd; }
   </style>
 
   <!-- Libraries -->
@@ -196,7 +194,7 @@
     <button onclick="insertMarkdown('```mermaid\n graph TD\n A[Start] --> B{Decision?}\n B -->|Yes| C[Do]\n B -->|No| D[Skip]\n```')" title="Mermaid">🐟</button>
     <button onclick="window.open('https://www.drawdb.app/editor','_blank')">🗄️ DrawDB</button>
     <button onclick="window.open('https://mermaid.live/edit','_blank')">🌐 Mermaid Live</button>
-</div>
+  </div>
 
   <!-- Container -->
   <div id="container">
@@ -215,14 +213,19 @@
     <div class="modal-content">
       <h3>📘 README – วิธีใช้งาน</h3>
       <ul>
-        <li>📝 Markdown Editor – เขียน/แก้ไขไฟล์ .md</li>
-        <li>👀 Preview – Live รองรับ Mermaid + Highlight.js</li>
-        <li>🔀 View Mode: Code / Preview / Split</li>
-        <li>💾 Save .md, 📤 Export PDF</li>
-        <li>🌗 Theme Toggle, ⬛ Fullscreen</li>
-        <li>🗑 Reset, 🔄 AutoSave</li>
-        <li>📋 Copy HTML จาก Preview</li>
-        <li>📂 Drag & Drop ไฟล์ .md ลง Editor ได้</li>
+        <li>✍️ <b>Create By : </b> – Sarawut Sittharod</li>
+        <li>✍️ <b>Markdown Editor</b> – เขียน/แก้ไขไฟล์ .md</li>
+        <li>👀 <b>Live Preview</b> – รองรับ Highlight.js, Mermaid, Tables, Code blocks</li>
+        <li>🔀 <b>View Modes</b> – Split, Code Only, Preview Only</li>
+        <li>💾 <b>การบันทึกและส่งออก</b> – Save .md, Export PDF (slicing), Copy HTML</li>
+        <li>🎨 <b>การตั้งค่า</b> – Theme Toggle, Fullscreen, Reset, Drag & Drop</li>
+        <li>⌨️ <b>Hotkeys</b>:
+          <ul>
+            <li>Ctrl+1 → Code Only</li>
+            <li>Ctrl+2 → Preview Only</li>
+            <li>Ctrl+3 → Split View</li>
+            <li>Ctrl+B → Bold, Ctrl+I → Italic, Ctrl+K → Link, Ctrl+H → Heading</li>
+            <li>Ctrl+S → Save .md, Ctrl+E → Export PDF</li>
       </ul>
       <div class="modal-actions">
         <button onclick="closeReadme()" class="primary">ปิด</button>
@@ -274,7 +277,7 @@
     await new Promise(r => setTimeout(r, 30));
   }
 
-  // ✅ Export PDF (Advanced slicing)
+  // ✅ Export PDF
   async function exportPDF() {
     const { jsPDF } = window.jspdf;
     await ensurePreviewSettled();
@@ -338,8 +341,8 @@
   function copyHTML() {
     const html = document.getElementById("preview").innerHTML;
     navigator.clipboard.writeText(html)
-      .then(() => alert("คัดลอก HTML แล้ว ✅"))
-      .catch(() => alert("ไม่สามารถคัดลอกได้ ❌"));
+      .then(() => showToast("✅ คัดลอก HTML แล้ว"))
+      .catch(() => showToast("❌ ไม่สามารถคัดลอกได้"));
   }
 
   // ✅ Drag & Drop
@@ -348,9 +351,7 @@
     e.preventDefault();
     container.style.border = "2px dashed var(--primary)";
   });
-  container.addEventListener("dragleave", () => {
-    container.style.border = "none";
-  });
+  container.addEventListener("dragleave", () => { container.style.border = "none"; });
   container.addEventListener("drop", async (e) => {
     e.preventDefault();
     container.style.border = "none";
@@ -361,7 +362,7 @@
       renderPreview();
       autoSave();
     } else {
-      alert("กรุณาเลือกไฟล์ .md เท่านั้น");
+      showToast("⚠️ กรุณาเลือกไฟล์ .md เท่านั้น");
     }
   });
 
@@ -440,6 +441,57 @@
   }
   document.getElementById("editor").addEventListener("input", () => { renderPreview(); autoSave(); });
   loadAutoSave(); renderPreview(); updateStatus();
+
+  // ✅ Toast
+  const toastContainer = document.createElement("div");
+  toastContainer.style.position = "fixed";
+  toastContainer.style.bottom = "20px";
+  toastContainer.style.right = "20px";
+  toastContainer.style.zIndex = "9999";
+  document.body.appendChild(toastContainer);
+
+  function showToast(message) {
+    const toast = document.createElement("div");
+    toast.textContent = message;
+
+    const bg = getComputedStyle(document.body).getPropertyValue("--card-bg") || "#333";
+    const textColor = getComputedStyle(document.body).getPropertyValue("--text-color") || "#fff";
+
+    toast.style.background = bg.trim();
+    toast.style.color = textColor.trim();
+    toast.style.padding = "8px 14px";
+    toast.style.marginTop = "8px";
+    toast.style.borderRadius = "6px";
+    toast.style.fontSize = "14px";
+    toast.style.boxShadow = "0 2px 6px rgba(0,0,0,0.25)";
+    toast.style.opacity = "0";
+    toast.style.transition = "opacity 0.3s ease";
+
+    toastContainer.appendChild(toast);
+    requestAnimationFrame(() => { toast.style.opacity = "1"; });
+
+    setTimeout(() => {
+      toast.style.opacity = "0";
+      setTimeout(() => toast.remove(), 500);
+    }, 1500);
+  }
+
+  // ✅ Hotkeys Support + Toast
+  document.addEventListener("keydown", (e) => {
+    if (e.ctrlKey || e.metaKey) {
+      switch (e.key.toLowerCase()) {
+        case "1": e.preventDefault(); setViewMode("code"); showToast("💻 Code Only"); break;
+        case "2": e.preventDefault(); setViewMode("preview"); showToast("👀 Preview Only"); break;
+        case "3": e.preventDefault(); setViewMode("split"); showToast("🖥️ Split View"); break;
+        case "s": e.preventDefault(); saveMarkdown(); showToast("💾 Saved Markdown"); break;
+        case "b": e.preventDefault(); insertMarkdown("**ข้อความ**"); showToast("🔡 Bold"); break;
+        case "i": e.preventDefault(); insertMarkdown("*ข้อความ*"); showToast("✍️ Italic"); break;
+        case "k": e.preventDefault(); insertMarkdown("[ข้อความ](URL)"); showToast("🔗 Insert Link"); break;
+        case "h": e.preventDefault(); insertMarkdown("# "); showToast("🔖 Heading"); break;
+        case "e": e.preventDefault(); exportPDF(); showToast("📄 Exported PDF"); break;
+      }
+    }
+  });
 </script>
 </body>
 </html>
