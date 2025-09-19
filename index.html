@@ -1,0 +1,344 @@
+  <!-- Sarawut Sittharod Create Program -->
+<!DOCTYPE html>
+<html lang="th">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BA Tools : By @space</title>
+  <style>
+    :root {
+      --bg-color: #f7f7f8;
+      --text-color: #1e1e1e;
+      --card-bg: #fff;
+      --code-bg: #eef6e3;
+      --code-text: #d4d4d4;
+      --primary: #2563eb;
+      --primary-hover: #1e40af;
+    }
+    [data-theme="dark"] {
+      --bg-color: #121212;
+      --text-color: #0b0a0a;
+      --card-bg: #eef6e3;
+      --code-bg: edf5dc#;
+      --code-text: #f8f8f2;
+    }
+
+    body {
+      font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans Thai", "Noto Sans", sans-serif;
+      background: var(--bg-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 0;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    /* Navbar */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 20px;
+      background: var(--card-bg);
+      box-shadow: 0 2px 5px rgba(0,0,0,0.15);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+
+    .navbar h1 {
+      font-size: 1.2rem;
+      margin: 0;
+      color: var(--text-color);
+    }
+
+    .navbar .actions {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    input[type="file"] {
+      display: none;
+    }
+
+    label, button {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 500;
+      transition: background 0.3s, transform 0.2s;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    label, button.primary {
+      background: var(--primary);
+      color: #fff;
+    }
+
+    label:hover, button.primary:hover {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+
+    button.secondary {
+      background: var(--card-bg);
+      color: var(--text-color);
+      border: 1px solid #ccc;
+    }
+
+    button.secondary:hover {
+      background: #f1f1f1;
+    }
+
+    /* Container */
+    #container {
+      max-width: 1000px;
+      margin: 20px auto;
+      padding: 20px;
+    }
+
+    #error {
+      color: #b91c1c;
+      background: #fee2e2;
+      padding: 12px;
+      border-radius: 6px;
+      margin-bottom: 12px;
+      display: none;
+      position: relative;
+    }
+
+    #error button {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      background: transparent;
+      border: none;
+      font-size: 16px;
+      cursor: pointer;
+      color: inherit;
+    }
+
+    #content {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+      min-height: 250px;
+      transition: background 0.3s;
+      border: 2px dashed transparent;
+      overflow-x: auto;
+    }
+
+    #content.dragover {
+      border: 2px dashed var(--primary);
+      background: rgba(37, 99, 235, 0.1);
+    }
+
+    pre {
+      background: var(--code-bg);
+      color: var(--code-text);
+      padding: 14px;
+      border-radius: 6px;
+      overflow-x: auto;
+    }
+
+    code {
+      font-family: "Fira Code", monospace;
+      font-size: 14px;
+    }
+
+    /* Responsive */
+    @media (max-width: 600px) {
+      .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+      .navbar h1 {
+        margin-bottom: 10px;
+      }
+      .navbar .actions {
+        justify-content: flex-start;
+      }
+    }
+  </style>
+
+  <!-- marked.js -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <!-- highlight.js -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+  <!-- mermaid.js -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <!-- html2canvas + jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+  <script>
+    mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' });
+    hljs.configure({ ignoreUnescapedHTML: true });
+
+    function showError(message) {
+      const errorBox = document.getElementById("error");
+      errorBox.style.display = "block";
+      document.getElementById("errorMsg").textContent = "Error: " + message;
+    }
+
+    function clearError() {
+      const errorBox = document.getElementById("error");
+      errorBox.style.display = "none";
+      document.getElementById("errorMsg").textContent = "";
+    }
+
+    async function loadMarkdownFromFile(file) {
+      try {
+        if (!file.name.endsWith(".md")) {
+          throw new Error("กรุณาเลือกไฟล์นามสกุล .md เท่านั้น");
+        }
+        const text = await file.text();
+        renderMarkdown(text);
+      } catch (err) {
+        showError(err.message);
+      }
+    }
+
+    function renderMarkdown(text) {
+      const html = marked.parse(text);
+      const contentEl = document.getElementById("content");
+      contentEl.innerHTML = html;
+
+      contentEl.querySelectorAll("pre code").forEach((block) => {
+        hljs.highlightElement(block);
+      });
+
+      mermaid.run({ querySelector: "code.language-mermaid, .mermaid" });
+    }
+
+    function resetViewer() {
+      document.getElementById("fileInput").value = "";
+      document.getElementById("content").innerHTML = "กรุณาอัปโหลดไฟล์ .md หรือลากมาวางที่นี่";
+      clearError();
+    }
+
+    function toggleTheme() {
+      const body = document.body;
+      const theme = body.getAttribute("data-theme") === "dark" ? "light" : "dark";
+      body.setAttribute("data-theme", theme);
+      document.getElementById("themeToggle").textContent =
+        theme === "dark" ? "โหมดสว่าง" : "โหมดมืด";
+
+      mermaid.initialize({ 
+        startOnLoad: false, 
+        theme: theme === "dark" ? "dark" : "default", 
+        securityLevel: 'loose' 
+      });
+      mermaid.run({ querySelector: "code.language-mermaid, .mermaid" });
+    }
+
+    function setupDragAndDrop() {
+      const contentEl = document.getElementById("content");
+      contentEl.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        contentEl.classList.add("dragover");
+      });
+      contentEl.addEventListener("dragleave", () => {
+        contentEl.classList.remove("dragover");
+      });
+      contentEl.addEventListener("drop", (e) => {
+        e.preventDefault();
+        contentEl.classList.remove("dragover");
+        const file = e.dataTransfer.files[0];
+        if (file) {
+          clearError();
+          loadMarkdownFromFile(file);
+        }
+      });
+    }
+
+    // ✅ Export PDF ครบทุกหน้า
+    async function exportPDF() {
+      const { jsPDF } = window.jspdf;
+      const content = document.getElementById("content");
+      const canvas = await html2canvas(content, { scale: 2 });
+      const imgData = canvas.toDataURL("image/png");
+
+      const pdf = new jsPDF("p", "mm", "a4");
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+
+      const imgWidth = pageWidth - 20;
+      const imgHeight = (canvas.height * imgWidth) / canvas.width;
+
+      let heightLeft = imgHeight;
+      let position = 10;
+
+      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+      heightLeft -= pageHeight;
+
+      while (heightLeft > 0) {
+        pdf.addPage();
+        position = heightLeft - imgHeight;
+        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
+        heightLeft -= pageHeight;
+      }
+
+      pdf.save("markdown.pdf");
+    }
+
+    function toggleFullScreen() {
+      const content = document.getElementById("content");
+      if (!document.fullscreenElement) {
+        content.requestFullscreen().catch(err => {
+          alert(`ไม่สามารถเข้าสู่โหมดเต็มจอ: ${err.message}`);
+        });
+      } else {
+        document.exitFullscreen();
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", () => {
+      const fileInput = document.getElementById("fileInput");
+      const resetBtn = document.getElementById("resetBtn");
+      const themeToggle = document.getElementById("themeToggle");
+      const exportBtn = document.getElementById("exportBtn");
+      const fullscreenBtn = document.getElementById("fullscreenBtn");
+
+      fileInput.addEventListener("change", (event) => {
+        clearError();
+        const file = event.target.files[0];
+        if (file) {
+          loadMarkdownFromFile(file);
+        }
+      });
+
+      resetBtn.addEventListener("click", resetViewer);
+      themeToggle.addEventListener("click", toggleTheme);
+      exportBtn.addEventListener("click", exportPDF);
+      fullscreenBtn.addEventListener("click", toggleFullScreen);
+
+      setupDragAndDrop();
+    });
+  </script>
+</head>
+<body data-theme="light">
+  <!-- Navbar -->
+  <div class="navbar">
+    <h1>📄BA Tools : Markdown + Mermaid Viewer : งานวิเคราะห์และพัฒนาโปรแกรม</h1>
+    <div class="actions">
+      <label for="fileInput">เลือกไฟล์ .md</label>
+      <input type="file" id="fileInput" accept=".md">
+      <button id="resetBtn" class="secondary">รีเซ็ต</button>
+      <button id="themeToggle" class="secondary">โหมดมืด</button>
+      <button id="fullscreenBtn" class="secondary">เต็มจอ</button>
+      <button id="exportBtn" class="primary">Export PDF</button>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div id="container">
+    <div id="error"><span id="errorMsg"></span><button onclick="clearError()">✖</button></div>
+    <div id="content">กรุณาอัปโหลดไฟล์ .md หรือลากมาวางที่นี่</div>
+  </div>
+</body>
+</html>
