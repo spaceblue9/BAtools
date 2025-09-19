@@ -1,38 +1,37 @@
-  <!-- Sarawut Sittharod Create Program -->
 <!DOCTYPE html>
 <html lang="th">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>BA Tools : By @space</title>
+  <title>BA Tools : Markdown Editor & Viewer</title>
   <style>
     :root {
       --bg-color: #f7f7f8;
       --text-color: #1e1e1e;
       --card-bg: #fff;
-      --code-bg: #eef6e3;
-      --code-text: #d4d4d4;
+      --code-bg: #f4f4f4;
+      --code-text: #333;
       --primary: #2563eb;
       --primary-hover: #1e40af;
     }
     [data-theme="dark"] {
       --bg-color: #121212;
-      --text-color: #0b0a0a;
-      --card-bg: #eef6e3;
-      --code-bg: edf5dc#;
+      --text-color: #f8f8f2;
+      --card-bg: #1e1e1e;
+      --code-bg: #2d2d2d;
       --code-text: #f8f8f2;
     }
-
     body {
       font-family: ui-sans-serif, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans Thai", "Noto Sans", sans-serif;
       background: var(--bg-color);
       color: var(--text-color);
       margin: 0;
-      padding: 0;
+      padding: 60px 0 30px 0;
+      display: flex;
+      flex-direction: column;
+      height: 100vh;
       transition: background 0.3s, color 0.3s;
     }
-
-    /* Navbar */
     .navbar {
       display: flex;
       justify-content: space-between;
@@ -40,305 +39,407 @@
       padding: 12px 20px;
       background: var(--card-bg);
       box-shadow: 0 2px 5px rgba(0,0,0,0.15);
-      position: sticky;
+      position: fixed;
       top: 0;
+      left: 0;
+      right: 0;
       z-index: 100;
     }
-
-    .navbar h1 {
-      font-size: 1.2rem;
-      margin: 0;
-      color: var(--text-color);
-    }
-
-    .navbar .actions {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    input[type="file"] {
-      display: none;
-    }
-
-    label, button {
-      padding: 8px 14px;
-      border-radius: 8px;
+    .navbar h1 { font-size: 1rem; margin: 0; }
+    .navbar .actions { display: flex; gap: 10px; flex-wrap: wrap; }
+    input[type="file"] { display: none; }
+    label, button, select {
+      padding: 6px 12px;
+      border-radius: 6px;
       border: none;
       cursor: pointer;
       font-size: 14px;
-      font-weight: 500;
-      transition: background 0.3s, transform 0.2s;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
     }
-
-    label, button.primary {
-      background: var(--primary);
-      color: #fff;
-    }
-
-    label:hover, button.primary:hover {
-      background: var(--primary-hover);
-      transform: translateY(-1px);
-    }
-
-    button.secondary {
-      background: var(--card-bg);
-      color: var(--text-color);
-      border: 1px solid #ccc;
-    }
-
-    button.secondary:hover {
-      background: #f1f1f1;
-    }
-
-    /* Container */
+    label, button.primary { background: var(--primary); color: #fff; }
+    label:hover, button.primary:hover { background: var(--primary-hover); }
+    button.secondary, select { background: var(--card-bg); color: var(--text-color); border: 1px solid #ccc; }
     #container {
-      max-width: 1000px;
-      margin: 20px auto;
-      padding: 20px;
+      flex: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 15px;
+      display: flex;
+      gap: 15px;
+      width: 100%;
+      height: calc(100vh - 160px);
+      border: none; /* ปกติไม่โชว์ */
     }
-
-    #error {
-      color: #b91c1c;
-      background: #fee2e2;
-      padding: 12px;
-      border-radius: 6px;
-      margin-bottom: 12px;
-      display: none;
-      position: relative;
-    }
-
-    #error button {
-      position: absolute;
-      top: 6px;
-      right: 8px;
-      background: transparent;
-      border: none;
-      font-size: 16px;
-      cursor: pointer;
-      color: inherit;
-    }
-
-    #content {
-      background: var(--card-bg);
-      padding: 20px;
-      border-radius: 12px;
-      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
-      min-height: 250px;
-      transition: background 0.3s;
-      border: 2px dashed transparent;
-      overflow-x: auto;
-    }
-
-    #content.dragover {
-      border: 2px dashed var(--primary);
-      background: rgba(37, 99, 235, 0.1);
-    }
-
-    pre {
-      background: var(--code-bg);
-      color: var(--code-text);
-      padding: 14px;
-      border-radius: 6px;
-      overflow-x: auto;
-    }
-
-    code {
+    #editor {
+      width: 50%;
+      height: 100%;
+      padding: 10px;
+      border-radius: 8px;
+      border: 1px solid #ccc;
+      resize: none;
       font-family: "Fira Code", monospace;
       font-size: 14px;
+      overflow-y: auto;
     }
-
-    /* Responsive */
-    @media (max-width: 600px) {
-      .navbar {
-        flex-direction: column;
-        align-items: flex-start;
-      }
-      .navbar h1 {
-        margin-bottom: 10px;
-      }
-      .navbar .actions {
-        justify-content: flex-start;
-      }
+    #preview {
+      width: 50%;
+      height: 100%;
+      padding: 15px;
+      border-radius: 8px;
+      background: var(--card-bg);
+      overflow-y: auto;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.1);
+    }
+    .status-bar {
+      background: var(--card-bg);
+      border-top: 1px solid #ccc;
+      padding: 6px 12px;
+      font-size: 13px;
+      display: flex;
+      justify-content: space-between;
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 200;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-content {
+      background: var(--card-bg);
+      padding: 20px;
+      border-radius: 10px;
+      width: 600px;
+      max-height: 80vh;
+      overflow-y: auto;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+    }
+    .modal-content h3 { margin-top: 0; font-size: 16px; }
+    .modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 10px; }
+    .toolbar {
+      background: var(--card-bg);
+      border-bottom: 1px solid #ccc;
+      padding: 6px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .toolbar button {
+      padding: 4px 8px;
+      border: 1px solid #ccc;
+      background: #eee;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .toolbar button:hover {
+      background: #ddd;
     }
   </style>
 
-  <!-- marked.js -->
+  <!-- Libraries -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <!-- highlight.js -->
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.0/dist/purify.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-  <!-- mermaid.js -->
   <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
-  <!-- html2canvas + jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-
-  <script>
-    mermaid.initialize({ startOnLoad: false, theme: 'default', securityLevel: 'loose' });
-    hljs.configure({ ignoreUnescapedHTML: true });
-
-    function showError(message) {
-      const errorBox = document.getElementById("error");
-      errorBox.style.display = "block";
-      document.getElementById("errorMsg").textContent = "Error: " + message;
-    }
-
-    function clearError() {
-      const errorBox = document.getElementById("error");
-      errorBox.style.display = "none";
-      document.getElementById("errorMsg").textContent = "";
-    }
-
-    async function loadMarkdownFromFile(file) {
-      try {
-        if (!file.name.endsWith(".md")) {
-          throw new Error("กรุณาเลือกไฟล์นามสกุล .md เท่านั้น");
-        }
-        const text = await file.text();
-        renderMarkdown(text);
-      } catch (err) {
-        showError(err.message);
-      }
-    }
-
-    function renderMarkdown(text) {
-      const html = marked.parse(text);
-      const contentEl = document.getElementById("content");
-      contentEl.innerHTML = html;
-
-      contentEl.querySelectorAll("pre code").forEach((block) => {
-        hljs.highlightElement(block);
-      });
-
-      mermaid.run({ querySelector: "code.language-mermaid, .mermaid" });
-    }
-
-    function resetViewer() {
-      document.getElementById("fileInput").value = "";
-      document.getElementById("content").innerHTML = "กรุณาอัปโหลดไฟล์ .md หรือลากมาวางที่นี่";
-      clearError();
-    }
-
-    function toggleTheme() {
-      const body = document.body;
-      const theme = body.getAttribute("data-theme") === "dark" ? "light" : "dark";
-      body.setAttribute("data-theme", theme);
-      document.getElementById("themeToggle").textContent =
-        theme === "dark" ? "โหมดสว่าง" : "โหมดมืด";
-
-      mermaid.initialize({ 
-        startOnLoad: false, 
-        theme: theme === "dark" ? "dark" : "default", 
-        securityLevel: 'loose' 
-      });
-      mermaid.run({ querySelector: "code.language-mermaid, .mermaid" });
-    }
-
-    function setupDragAndDrop() {
-      const contentEl = document.getElementById("content");
-      contentEl.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        contentEl.classList.add("dragover");
-      });
-      contentEl.addEventListener("dragleave", () => {
-        contentEl.classList.remove("dragover");
-      });
-      contentEl.addEventListener("drop", (e) => {
-        e.preventDefault();
-        contentEl.classList.remove("dragover");
-        const file = e.dataTransfer.files[0];
-        if (file) {
-          clearError();
-          loadMarkdownFromFile(file);
-        }
-      });
-    }
-
-    // ✅ Export PDF ครบทุกหน้า
-    async function exportPDF() {
-      const { jsPDF } = window.jspdf;
-      const content = document.getElementById("content");
-      const canvas = await html2canvas(content, { scale: 2 });
-      const imgData = canvas.toDataURL("image/png");
-
-      const pdf = new jsPDF("p", "mm", "a4");
-      const pageWidth = pdf.internal.pageSize.getWidth();
-      const pageHeight = pdf.internal.pageSize.getHeight();
-
-      const imgWidth = pageWidth - 20;
-      const imgHeight = (canvas.height * imgWidth) / canvas.width;
-
-      let heightLeft = imgHeight;
-      let position = 10;
-
-      pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-      heightLeft -= pageHeight;
-
-      while (heightLeft > 0) {
-        pdf.addPage();
-        position = heightLeft - imgHeight;
-        pdf.addImage(imgData, "PNG", 10, position, imgWidth, imgHeight);
-        heightLeft -= pageHeight;
-      }
-
-      pdf.save("markdown.pdf");
-    }
-
-    function toggleFullScreen() {
-      const content = document.getElementById("content");
-      if (!document.fullscreenElement) {
-        content.requestFullscreen().catch(err => {
-          alert(`ไม่สามารถเข้าสู่โหมดเต็มจอ: ${err.message}`);
-        });
-      } else {
-        document.exitFullscreen();
-      }
-    }
-
-    document.addEventListener("DOMContentLoaded", () => {
-      const fileInput = document.getElementById("fileInput");
-      const resetBtn = document.getElementById("resetBtn");
-      const themeToggle = document.getElementById("themeToggle");
-      const exportBtn = document.getElementById("exportBtn");
-      const fullscreenBtn = document.getElementById("fullscreenBtn");
-
-      fileInput.addEventListener("change", (event) => {
-        clearError();
-        const file = event.target.files[0];
-        if (file) {
-          loadMarkdownFromFile(file);
-        }
-      });
-
-      resetBtn.addEventListener("click", resetViewer);
-      themeToggle.addEventListener("click", toggleTheme);
-      exportBtn.addEventListener("click", exportPDF);
-      fullscreenBtn.addEventListener("click", toggleFullScreen);
-
-      setupDragAndDrop();
-    });
-  </script>
 </head>
 <body data-theme="light">
   <!-- Navbar -->
   <div class="navbar">
-    <h1>📄BA Tools : Markdown + Mermaid Viewer : งานวิเคราะห์และพัฒนาโปรแกรม</h1>
+    <h1>📄 BA Tools : Markdown Editor & Viewer</h1>
     <div class="actions">
-      <label for="fileInput">เลือกไฟล์ .md</label>
+      <label for="fileInput"><i class="fas fa-folder-open"></i> เปิดไฟล์ .md</label>
       <input type="file" id="fileInput" accept=".md">
-      <button id="resetBtn" class="secondary">รีเซ็ต</button>
-      <button id="themeToggle" class="secondary">โหมดมืด</button>
-      <button id="fullscreenBtn" class="secondary">เต็มจอ</button>
-      <button id="exportBtn" class="primary">Export PDF</button>
+      <select id="viewMode">
+        <option value="split">Split View</option>
+        <option value="code">Show Code</option>
+        <option value="preview">Show Preview</option>
+      </select>
+      <button id="themeToggle" class="secondary"><i class="fas fa-moon"></i> โหมดมืด</button>
+      <button onclick="toggleFullScreen()" class="secondary"><i class="fas fa-expand"></i> เต็มจอ</button>
+      <button onclick="resetEditor()" class="secondary"><i class="fas fa-undo"></i> Reset</button>
+      <button onclick="openReadme()" class="secondary"><i class="fas fa-book"></i> README</button>
+      <button onclick="copyHTML()" class="secondary"><i class="fas fa-copy"></i> Copy HTML</button>
+      <button onclick="exportPDF()" class="primary"><i class="fas fa-file-pdf"></i> Export PDF</button>
+      <button onclick="saveMarkdown()" class="primary"><i class="fas fa-save"></i> Save .md</button>
     </div>
   </div>
 
-  <!-- Content -->
+  <!-- Toolbar -->
+  <div class="toolbar">
+    <button onclick="insertMarkdown('# ')" title="Heading 1">H1</button>
+    <button onclick="insertMarkdown('## ')" title="Heading 2">H2</button>
+    <button onclick="insertMarkdown('### ')" title="Heading 3">H3</button>
+    <button onclick="insertMarkdown('**ข้อความ**')" title="Bold"><b>B</b></button>
+    <button onclick="insertMarkdown('*ข้อความ*')" title="Italic"><i>I</i></button>
+    <button onclick="insertMarkdown('~~ข้อความ~~')" title="Strikethrough">S</button>
+    <button onclick="insertMarkdown('- รายการ')" title="Bullet List">• List</button>
+    <button onclick="insertMarkdown('1. รายการ')" title="Numbered List">1. List</button>
+    <button onclick="insertMarkdown('[ข้อความ](URL)')" title="Link">🔗</button>
+    <button onclick="insertMarkdown('![alt](image.png)')" title="Image">🖼️</button>
+    <button onclick="insertMarkdown('`คำสั่ง`')" title="Inline Code">`</button>
+    <button onclick="insertMarkdown('```\nโค้ด\n```')" title="Code Block">{ }</button>
+    <button onclick="insertMarkdown('> ข้อความ')" title="Quote">❝</button>
+    <button onclick="insertMarkdown('---')" title="Horizontal Line">───</button>
+    <button onclick="insertMarkdown('| หัว1 | หัว2 |\n|---|---|\n|ค่า1|ค่า2|')" title="Table">📊</button>
+    <button onclick="insertMarkdown('```mermaid\n graph TD\n A[Start] --> B{Decision?}\n B -->|Yes| C[Do]\n B -->|No| D[Skip]\n```')" title="Mermaid">🐟</button>
+    <button onclick="window.open('https://www.drawdb.app/editor','_blank')">🗄️ DrawDB</button>
+    <button onclick="window.open('https://mermaid.live/edit','_blank')">🌐 Mermaid Live</button>
+</div>
+
+  <!-- Container -->
   <div id="container">
-    <div id="error"><span id="errorMsg"></span><button onclick="clearError()">✖</button></div>
-    <div id="content">กรุณาอัปโหลดไฟล์ .md หรือลากมาวางที่นี่</div>
+    <textarea id="editor" placeholder="เขียน Markdown ที่นี่..."></textarea>
+    <div id="preview">🔎 Preview จะแสดงที่นี่...</div>
   </div>
+
+  <!-- Status Bar -->
+  <div class="status-bar">
+    <span id="statusMode">Mode: Split View</span>
+    <span id="statusLines">Lines: 0 | Words: 0 | Last Saved: -</span>
+  </div>
+
+  <!-- README Modal -->
+  <div id="readmeModal" class="modal">
+    <div class="modal-content">
+      <h3>📘 README – วิธีใช้งาน</h3>
+      <ul>
+        <li>📝 Markdown Editor – เขียน/แก้ไขไฟล์ .md</li>
+        <li>👀 Preview – Live รองรับ Mermaid + Highlight.js</li>
+        <li>🔀 View Mode: Code / Preview / Split</li>
+        <li>💾 Save .md, 📤 Export PDF</li>
+        <li>🌗 Theme Toggle, ⬛ Fullscreen</li>
+        <li>🗑 Reset, 🔄 AutoSave</li>
+        <li>📋 Copy HTML จาก Preview</li>
+        <li>📂 Drag & Drop ไฟล์ .md ลง Editor ได้</li>
+      </ul>
+      <div class="modal-actions">
+        <button onclick="closeReadme()" class="primary">ปิด</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+  mermaid.initialize({ startOnLoad: false, theme: "default" });
+  hljs.configure({ ignoreUnescapedHTML: true });
+
+  function insertMarkdown(text) {
+    const editor = document.getElementById("editor");
+    editor.setRangeText(text, editor.selectionStart, editor.selectionEnd, "end");
+    editor.focus();
+    renderPreview();
+    autoSave();
+  }
+
+  function renderPreview() {
+    const text = document.getElementById("editor").value;
+    const dirty = marked.parse(text, { gfm: true, breaks: true });
+    const clean = DOMPurify.sanitize(dirty);
+    const preview = document.getElementById("preview");
+    preview.innerHTML = clean;
+    preview.querySelectorAll("pre code").forEach((block) => hljs.highlightElement(block));
+    mermaid.run({ querySelector: "code.language-mermaid, .mermaid" });
+    updateStatus();
+  }
+
+  function autoSave() {
+    localStorage.setItem("markdownContent", document.getElementById("editor").value);
+    updateStatus();
+  }
+
+  function updateStatus(mode = document.getElementById("viewMode").value) {
+    const editor = document.getElementById("editor");
+    const lines = editor.value.split("\n").length;
+    const words = editor.value.trim().split(/\s+/).filter(Boolean).length;
+    document.getElementById("statusMode").textContent =
+      "Mode: " + (mode === "code" ? "Code Only" : mode === "preview" ? "Preview Only" : "Split View");
+    document.getElementById("statusLines").textContent =
+      `Lines: ${lines} | Words: ${words} | Last Saved: ${new Date().toLocaleTimeString()}`;
+  }
+
+  async function ensurePreviewSettled() {
+    try { await mermaid.run({ querySelector: "code.language-mermaid, .mermaid" }); } catch (e) {}
+    await new Promise(r => requestAnimationFrame(r));
+    await new Promise(r => setTimeout(r, 30));
+  }
+
+  // ✅ Export PDF (Advanced slicing)
+  async function exportPDF() {
+    const { jsPDF } = window.jspdf;
+    await ensurePreviewSettled();
+
+    const pdf = new jsPDF("p", "mm", "a4");
+    const marginMM = 10, gapMM = 2;
+    const pageWmm = pdf.internal.pageSize.getWidth();
+    const pageHmm = pdf.internal.pageSize.getHeight();
+    const usableWmm = pageWmm - marginMM * 2;
+    const usableHmm = pageHmm - marginMM * 2;
+
+    const preview = document.getElementById("preview");
+    const blocks = Array.from(preview.children);
+    const bg = getComputedStyle(document.body).getPropertyValue("--card-bg")?.trim() || "#ffffff";
+
+    let yMM = marginMM;
+
+    for (const block of blocks) {
+      if (!block.innerText.trim() && !block.querySelector("img,svg,canvas")) continue;
+
+      const canvas = await html2canvas(block, { scale: 2, useCORS: true, backgroundColor: bg });
+      const pxPerMM = canvas.width / usableWmm;
+      const blockHmm = canvas.height / pxPerMM;
+
+      if (blockHmm <= (marginMM + usableHmm - yMM)) {
+        pdf.addImage(canvas.toDataURL("image/png"), "PNG", marginMM, yMM, usableWmm, blockHmm, undefined, "FAST");
+        yMM += blockHmm + gapMM;
+        continue;
+      }
+
+      let offsetPx = 0;
+      const totalPx = canvas.height;
+      while (offsetPx < totalPx) {
+        let remainHmm = marginMM + usableHmm - yMM;
+        if (remainHmm < 1) {
+          pdf.addPage(); yMM = marginMM; remainHmm = usableHmm;
+        }
+        let slicePx = Math.min(totalPx - offsetPx, Math.floor(remainHmm * pxPerMM));
+        if (slicePx < 4) slicePx = Math.min(4, totalPx - offsetPx);
+
+        const sliceCanvas = document.createElement("canvas");
+        sliceCanvas.width = canvas.width;
+        sliceCanvas.height = slicePx;
+        const sctx = sliceCanvas.getContext("2d");
+        sctx.fillStyle = bg;
+        sctx.fillRect(0, 0, sliceCanvas.width, sliceCanvas.height);
+        sctx.drawImage(canvas, 0, offsetPx, canvas.width, slicePx, 0, 0, canvas.width, slicePx);
+
+        const sliceHmm = slicePx / pxPerMM;
+        pdf.addImage(sliceCanvas.toDataURL("image/png"), "PNG", marginMM, yMM, usableWmm, sliceHmm, undefined, "FAST");
+        yMM += sliceHmm + gapMM;
+        offsetPx += slicePx;
+
+        if (yMM > marginMM + usableHmm - 1) { pdf.addPage(); yMM = marginMM; }
+      }
+    }
+    pdf.save("markdown.pdf");
+  }
+
+  // ✅ Copy HTML
+  function copyHTML() {
+    const html = document.getElementById("preview").innerHTML;
+    navigator.clipboard.writeText(html)
+      .then(() => alert("คัดลอก HTML แล้ว ✅"))
+      .catch(() => alert("ไม่สามารถคัดลอกได้ ❌"));
+  }
+
+  // ✅ Drag & Drop
+  const container = document.getElementById("container");
+  container.addEventListener("dragover", (e) => {
+    e.preventDefault();
+    container.style.border = "2px dashed var(--primary)";
+  });
+  container.addEventListener("dragleave", () => {
+    container.style.border = "none";
+  });
+  container.addEventListener("drop", async (e) => {
+    e.preventDefault();
+    container.style.border = "none";
+    const file = e.dataTransfer.files[0];
+    if (file && file.name.endsWith(".md")) {
+      const text = await file.text();
+      document.getElementById("editor").value = text;
+      renderPreview();
+      autoSave();
+    } else {
+      alert("กรุณาเลือกไฟล์ .md เท่านั้น");
+    }
+  });
+
+  // Scroll Sync
+  const editorEl = document.getElementById("editor"), previewEl = document.getElementById("preview");
+  let isSyncingEditor = false, isSyncingPreview = false;
+  editorEl.addEventListener("scroll", () => {
+    if (!isSyncingEditor) {
+      isSyncingPreview = true;
+      const ratio = editorEl.scrollTop / (editorEl.scrollHeight - editorEl.clientHeight);
+      previewEl.scrollTop = ratio * (previewEl.scrollHeight - previewEl.clientHeight);
+    } isSyncingEditor = false;
+  });
+  previewEl.addEventListener("scroll", () => {
+    if (!isSyncingPreview) {
+      isSyncingEditor = true;
+      const ratio = previewEl.scrollTop / (previewEl.scrollHeight - previewEl.clientHeight);
+      editorEl.scrollTop = ratio * (editorEl.scrollHeight - editorEl.clientHeight);
+    } isSyncingPreview = false;
+  });
+
+  function toggleFullScreen() {
+    const content = document.getElementById("container");
+    if (!document.fullscreenElement) content.requestFullscreen();
+    else document.exitFullscreen();
+  }
+  function resetEditor() {
+    if (confirm("ต้องการล้างเนื้อหาทั้งหมดหรือไม่?")) {
+      document.getElementById("editor").value = "";
+      document.getElementById("preview").innerHTML = "🔎 Preview จะแสดงที่นี่...";
+      localStorage.removeItem("markdownContent");
+      updateStatus();
+    }
+  }
+  function saveMarkdown() {
+    const text = document.getElementById("editor").value;
+    const fileName = prompt("กรอกชื่อไฟล์:", "untitled");
+    if (fileName) {
+      const blob = new Blob([text], { type: "text/markdown" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = fileName + ".md";
+      link.click();
+    }
+  }
+  function openReadme() { document.getElementById("readmeModal").style.display = "flex"; }
+  function closeReadme() { document.getElementById("readmeModal").style.display = "none"; }
+  document.getElementById("themeToggle").addEventListener("click", () => {
+    const body = document.body;
+    const theme = body.getAttribute("data-theme") === "dark" ? "light" : "dark";
+    body.setAttribute("data-theme", theme);
+    document.getElementById("themeToggle").innerHTML =
+      theme === "dark" ? '<i class="fas fa-sun"></i> โหมดสว่าง' : '<i class="fas fa-moon"></i> โหมดมืด';
+    mermaid.initialize({ startOnLoad: false, theme: theme === "dark" ? "dark" : "default" });
+    renderPreview();
+  });
+  function setViewMode(mode) {
+    const editor = document.getElementById("editor"), preview = document.getElementById("preview");
+    if (mode === "code") { editor.style.display = "block"; editor.style.width = "100%"; preview.style.display = "none"; }
+    else if (mode === "preview") { editor.style.display = "none"; preview.style.display = "block"; preview.style.width = "100%"; }
+    else { editor.style.display = "block"; preview.style.display = "block"; editor.style.width = "50%"; preview.style.width = "50%"; }
+    updateStatus(mode);
+  }
+  document.getElementById("viewMode").addEventListener("change", (e) => setViewMode(e.target.value));
+  document.getElementById("fileInput").addEventListener("change", async (event) => {
+    const file = event.target.files[0];
+    if (file && file.name.endsWith(".md")) {
+      const text = await file.text();
+      document.getElementById("editor").value = text;
+      renderPreview(); autoSave();
+    }
+  });
+  function loadAutoSave() {
+    const saved = localStorage.getItem("markdownContent");
+    if (saved) { document.getElementById("editor").value = saved; renderPreview(); }
+  }
+  document.getElementById("editor").addEventListener("input", () => { renderPreview(); autoSave(); });
+  loadAutoSave(); renderPreview(); updateStatus();
+</script>
 </body>
 </html>
